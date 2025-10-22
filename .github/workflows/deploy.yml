@@ -1,12 +1,37 @@
-      - name: Verify Deployment & Print URL
+name: Deploy to S3
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Sync to S3
+        uses: jakejarvis/s3-sync-action@v0.5.1
+        with:
+          args: --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: "./"
+
+      - name: Verify Deployment
         run: |
-          SITE_URL="https://libin-static-site-demo.s3.amazonaws.com/index.html"
           echo "Checking site status..."
-          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" $SITE_URL)
+          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" https://libin-static-site-demo.s3.amazonaws.com/index.html)
           echo "HTTP Status Code: $STATUS_CODE"
           if [ "$STATUS_CODE" -ne 200 ]; then
             echo "Deployment check failed!"
             exit 1
           else
-            echo "✅ Deployment successful! Site is live: $SITE_URL"
+            echo "Deployment successful! Site is live."
           fi
